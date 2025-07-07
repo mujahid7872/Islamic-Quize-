@@ -1,0 +1,148 @@
+
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8">
+  <title>ইসলামিক কুইজ</title>
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      background: #f2f2f2;
+      padding: 20px;
+      max-width: 600px;
+      margin: auto;
+    }
+    .card {
+      background: white;
+      padding: 30px;
+      border-radius: 12px;
+      margin-top: 40px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.1);
+      text-align: center;
+    }
+    h2 {
+      color: #2c3e50;
+      font-size: 24px;
+    }
+    button {
+      padding: 10px 25px;
+      background-color: #2e8b57;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
+      margin: 10px 0;
+      width: 100%;
+      max-width: 400px;
+    }
+    .feedback {
+      margin-top: 15px;
+      font-weight: bold;
+    }
+    .correct {
+      color: green;
+    }
+    .wrong {
+      color: red;
+    }
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Welcome Page -->
+  <div class="card" id="welcomePage">
+    <h2>🤝 ইসলামিক কুইজে আপনাকে স্বাগতম!</h2>
+    <p>প্রশ্নগুলো একে একে আসবে, উত্তর দিয়ে আপনার জ্ঞান যাচাই করুন।</p>
+    <button onclick="startQuiz()">কুইজ শুরু করুন</button>
+  </div>
+
+  <!-- Quiz Page -->
+  <div class="card hidden" id="quizCard">
+    <h2 id="question"></h2>
+    <div id="options"></div>
+    <div class="feedback" id="feedback"></div>
+  </div>
+
+  <!-- Thank You Page -->
+  <div class="card hidden" id="thankYouPage">
+    <h2>🎉 কুইজ শেষ!</h2>
+    <p id="scoreText"></p>
+  </div>
+
+  <script>
+    const sheetID = "1RKNvcVsL7xexnWdkoBo_Un4tg6uE3SDKnwmTUNZ3kiQ";
+    const sheetURL = `https://opensheet.elk.sh/${sheetID}/Sheet1`;
+
+    let questions = [];
+    let current = 0;
+    let score = 0;
+
+    function startQuiz() {
+      document.getElementById("welcomePage").classList.add("hidden");
+      document.getElementById("quizCard").classList.remove("hidden");
+
+      fetch(sheetURL)
+        .then(res => res.json())
+        .then(data => {
+          questions = data;
+          loadQuestion();
+        })
+        .catch(err => {
+          document.getElementById("question").innerText = "❌ প্রশ্ন লোড করা যায়নি! Sheet Public করা হয়েছে কিনা চেক করুন।";
+          console.error("Sheet fetch error:", err);
+        });
+    }
+
+    function loadQuestion() {
+      document.getElementById("feedback").innerText = "";
+      const q = questions[current];
+      document.getElementById("question").innerText = q.question;
+
+      const optionsContainer = document.getElementById("options");
+      optionsContainer.innerHTML = "";
+
+      [q.option1, q.option2, q.option3, q.option4].forEach((option, i) => {
+        const button = document.createElement("button");
+        button.innerText = option;
+        button.onclick = () => checkAnswer(i, parseInt(q.answerIndex), q);
+        optionsContainer.appendChild(button);
+      });
+    }
+
+    function checkAnswer(selected, correct, q) {
+      const feedback = document.getElementById("feedback");
+
+      if (selected === correct) {
+        feedback.innerText = "✅ সঠিক উত্তর!";
+        feedback.className = "feedback correct";
+        score++;
+      } else {
+        const correctText = [q.option1, q.option2, q.option3, q.option4][correct];
+        feedback.innerText = `❌ ভুল! সঠিক উত্তর ছিল: ${correctText}`;
+        feedback.className = "feedback wrong";
+      }
+
+      document.querySelectorAll("#options button").forEach(btn => btn.disabled = true);
+
+      setTimeout(() => {
+        current++;
+        if (current < questions.length) {
+          loadQuestion();
+        } else {
+          showResult();
+        }
+      }, 2000);
+    }
+
+    function showResult() {
+      document.getElementById("quizCard").classList.add("hidden");
+      document.getElementById("thankYouPage").classList.remove("hidden");
+      document.getElementById("scoreText").innerText = `আপনার স্কোর: ${score} / ${questions.length}`;
+    }
+  </script>
+</body>
+</html>
